@@ -126,6 +126,95 @@
 	return TRUE
 
 // ***************************************
+// *********** Tail Slam
+// ***************************************
+
+/datum/action/xeno_action/activable/tail_slam
+	name = "Tail Slam"
+	action_icon_state = "tail_attack"
+	desc = "Tail Slam."
+	cooldown_timer = 5 SECONDS
+	plasma_cost = 5
+	keybind_flags = XACT_KEYBIND_USE_ABILITY | XACT_IGNORE_SELECTED_ABILITY
+	keybinding_signals = list(
+		KEYBINDING_NORMAL = COMSIG_XENOABILITY_TAIL_SLAM,
+		KEYBINDING_ALTERNATE = COMSIG_XENOABILITY_TAIL_SLAM_SELECT,
+	)
+	/// Used for particles. Holds the particles instead of the mob. See particle_holder for documentation.
+	var/obj/effect/abstract/particle_holder/particle_holder
+
+/datum/action/xeno_action/activable/tail_slam/on_cooldown_finish()
+	to_chat(owner, span_notice("We are ready to use tail slam again."))
+	playsound(owner, "sound/effects/xeno_newlarva.ogg", 50, 0, 1)
+	return ..()
+
+
+/datum/action/xeno_action/activable/tail_slam/use_ability(atom/target)
+	if(target) // Keybind use doesn't have a target
+		owner.face_atom(target)
+
+	var/mob/living/carbon/xenomorph/queen/X = owner
+	activate_particles(X.dir)
+
+	var/turf/lower_left
+	var/turf/upper_right
+	switch(owner.dir)
+		if(NORTH)
+			lower_left = locate(owner.x - 1, owner.y + 1, owner.z)
+			upper_right = locate(owner.x + 1, owner.y + 4, owner.z)
+		if(SOUTH)
+			lower_left = locate(owner.x - 1, owner.y - 4, owner.z)
+			upper_right = locate(owner.x + 1, owner.y - 1, owner.z)
+		if(WEST)
+			lower_left = locate(owner.x - 4, owner.y - 1, owner.z)
+			upper_right = locate(owner.x - 1, owner.y + 1, owner.z)
+		if(EAST)
+			lower_left = locate(owner.x + 1, owner.y - 1, owner.z)
+			upper_right = locate(owner.x + 4, owner.y + 1, owner.z)
+
+	for(var/turf/affected_tile in block(lower_left, upper_right)) //everything in the 3x3 block is found.
+		affected_tile.Shake(4, 4, 2 SECONDS)
+		for(var/i in affected_tile)
+			var/atom/movable/affected = i
+			if(ishuman(affected)) //if they're human, they also should get knocked off their feet from the blast.
+				var/mob/living/carbon/human/H = affected
+				if(H.stat == DEAD) //unless they are dead, then the blast mysteriously ignores them.
+					continue
+				H.apply_damage(30, BRUTE, blocked = MELEE)
+				H.apply_damage(30, STAMINA)
+				H.adjust_stagger(6)
+				H.add_slowdown(6)
+				H.apply_effect(1, WEAKEN)
+				shake_camera(H, 3, 3)
+
+	owner.visible_message(span_xenowarning("[owner] slams their tail into the ground!"), \
+	span_xenowarning("We send slam our tail against the ground!"))
+
+	playsound(owner,'sound/effects/bamf.ogg', 75, TRUE)
+	playsound(owner, "alien_roar", 50)
+
+	succeed_activate()
+	add_cooldown()
+
+/datum/action/xeno_action/activable/tail_slam/proc/activate_particles(direction)
+	particle_holder = new(get_turf(owner), /particles/ravager_slash) //placeholder
+	QDEL_NULL_IN(src, particle_holder, 5)
+	particle_holder.particles.rotation += dir2angle(direction)
+	switch(direction) // There's no shared logic here because sprites are magical.
+		if(NORTH) // Gotta define stuff for each angle so it looks good.
+			particle_holder.particles.position = list(8, 4)
+			particle_holder.particles.velocity = list(0, 20)
+		if(EAST)
+			particle_holder.particles.position = list(3, -8)
+			particle_holder.particles.velocity = list(20, 0)
+		if(SOUTH)
+			particle_holder.particles.position = list(-9, -3)
+			particle_holder.particles.velocity = list(0, -20)
+		if(WEST)
+			particle_holder.particles.position = list(-4, 9)
+			particle_holder.particles.velocity = list(-20, 0)
+
+// ***************************************
 // *********** Overwatch
 // ***************************************
 /datum/action/xeno_action/watch_xeno

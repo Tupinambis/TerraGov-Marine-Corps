@@ -723,6 +723,8 @@
 #define COMSIG_XENOABILITY_QUEEN_GIVE_PLASMA "xenoability_queen_give_plasma"
 #define COMSIG_XENOABILITY_QUEEN_HIVE_MESSAGE "xenoability_queen_hive_message"
 #define COMSIG_XENOABILITY_DEEVOLVE "xenoability_deevolve"
+#define COMSIG_XENOABILITY_TAIL_SLAM "xenoability_tail_slam"
+#define COMSIG_XENOABILITY_TAIL_SLAM_SELECT "xenoability_tail_slam_select"
 
 #define COMSIG_XENOABILITY_LAY_HIVEMIND "xenoability_lay_hivemind"
 #define COMSIG_XENOABILITY_LAY_EGG "xenoability_lay_egg"

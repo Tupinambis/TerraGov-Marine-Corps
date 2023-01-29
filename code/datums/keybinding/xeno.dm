@@ -543,6 +543,18 @@
 	description = ""
 	keybind_signal = COMSIG_XENOABILITY_DEEVOLVE
 
+/datum/keybinding/xeno/tail_slam
+	name = "tail_slam"
+	full_name = "Queen: Tail Slam"
+	description = ""
+	keybind_signal = COMSIG_XENOABILITY_TAIL_SLAM
+
+/datum/keybinding/xeno/tail_slam_select
+	name = "tail_slam_select"
+	full_name = "Queen: Select Tail Slam"
+	description = ""
+	keybind_signal = COMSIG_XENOABILITY_TAIL_SLAM_SELECT
+
 /datum/keybinding/xeno/ravager_charge
 	name = "ravager_charge"
 	full_name = "Ravager: Eviscerating Charge"
