@@ -126,6 +126,105 @@
 	return TRUE
 
 // ***************************************
+// *********** Psychic Barrier
+// ***************************************
+
+/datum/action/xeno_action/toggle_psychic_barrier
+	name = "Toggle Psychic Barrier"
+	action_icon_state = "stealth_on"
+	desc = "VANGUARD."
+	plasma_cost = 10
+	keybinding_signals = list(
+		KEYBINDING_NORMAL = COMSIG_XENOABILITY_TOGGLE_PSYCHIC_BARRIER
+	)
+	//Is the barrier active?
+	var/barrier_active = FALSE
+	//Determines how much barrier health is left.
+	var/barrier_health = 0
+	//Max barrier health before regeneration halts.
+	var/max_barrier_health = 100
+	//Actual timer for the barrier cooldown.
+	var/barrier_timer
+	//Default time it takes before barrier begins to regenrate.
+	var/damaged_barrier_cooldown = 5 SECONDS
+	//How much the barrier regenerates per tick
+	var/barrier_regen_amount = 2
+
+/datum/action/xeno_action/toggle_psychic_barrier/remove_action(mob/living/L)
+	if(barrier_active)
+		deactivate_barrier()
+	return ..()
+
+/datum/action/xeno_action/toggle_psychic_barrier/can_use_action(silent = FALSE, override_flags)
+	. = ..()
+	if(!.)
+		return FALSE
+	return TRUE
+
+/datum/action/xeno_action/toggle_psychic_barrier/action_activate()
+	if(barrier_active)
+		deactivate_barrier()
+		return TRUE
+	activate_barrier()
+	succeed_activate()
+
+/datum/action/xeno_action/toggle_psychic_barrier/proc/activate_barrier() //Kills shield processing.
+	SIGNAL_HANDLER
+	to_chat(owner, "<span class='xenodanger'>We activate our psychic barrier.</span>")
+	barrier_active = TRUE
+
+	RegisterSignal(owner, COMSIG_XENOMORPH_PSYCHIC_BARRIER_REGEN, .proc/handle_barrier)
+	RegisterSignal(owner, list(COMSIG_XENOMORPH_BRUTE_DAMAGE, COMSIG_XENOMORPH_BURN_DAMAGE), .proc/absorb_damage)
+	START_PROCESSING(SSprocessing, src)
+	handle_barrier()
+
+/datum/action/xeno_action/toggle_psychic_barrier/proc/deactivate_barrier() //Kills shield processing.
+	SIGNAL_HANDLER
+	to_chat(owner, "<span class='xenodanger'>We deactivate our psychic barrier.</span>")
+	barrier_active = FALSE
+	barrier_health = 0
+
+	UnregisterSignal(owner, COMSIG_XENOMORPH_PSYCHIC_BARRIER_REGEN)
+	UnregisterSignal(owner, list(COMSIG_XENOMORPH_BRUTE_DAMAGE, COMSIG_XENOMORPH_BURN_DAMAGE))
+	STOP_PROCESSING(SSprocessing, src)
+
+/datum/action/xeno_action/toggle_psychic_barrier/process()
+	if(!barrier_active)
+		return PROCESS_KILL
+	handle_barrier()
+
+/datum/action/xeno_action/toggle_psychic_barrier/proc/handle_barrier()
+	SIGNAL_HANDLER
+	//We need to be missing barrier health and have no delay to regenerate.
+	if((barrier_health < max_barrier_health) && (barrier_timer <= 0))
+		barrier_health += barrier_regen_amount
+		return
+	//Don't keep processing when barrier is full.
+	else if (barrier_health == max_barrier_health)
+		STOP_PROCESSING(SSprocessing, src)
+		return
+
+/datum/action/xeno_action/toggle_psychic_barrier/proc/begin_regen()
+	barrier_timer = null
+	START_PROCESSING(SSprocessing, src)
+
+/datum/action/xeno_action/toggle_psychic_barrier/proc/absorb_damage(datum/source, amount, amount_mod)
+	SIGNAL_HANDLER
+	STOP_PROCESSING(SSprocessing, src)
+	deltimer(barrier_timer)
+	var/barrier_left = barrier_health - amount
+	if(barrier_left > 0)
+		barrier_health = barrier_left
+		amount_mod += amount
+	else
+		amount_mod += amount - barrier_health
+		barrier_health = 0
+		barrier_timer = addtimer(CALLBACK(src, .proc/begin_regen), damaged_barrier_cooldown + 1, TIMER_STOPPABLE) //Gives it a little extra time for the cooldown.
+		return -barrier_left
+	barrier_timer = addtimer(CALLBACK(src, .proc/begin_regen), damaged_barrier_cooldown, TIMER_STOPPABLE)
+	return 0
+
+// ***************************************
 // *********** Tail Slam
 // ***************************************
 
