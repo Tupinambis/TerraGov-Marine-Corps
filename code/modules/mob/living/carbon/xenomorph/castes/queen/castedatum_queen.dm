@@ -54,11 +54,11 @@
 		/datum/action/xeno_action/blessing_menu,
 		/datum/action/xeno_action/place_acidwell,
 		/datum/action/xeno_action/call_of_the_burrowed,
-		/datum/action/xeno_action/activable/screech,
+		//datum/action/xeno_action/activable/screech,
 		/datum/action/xeno_action/activable/corrosive_acid/strong,
-		/datum/action/xeno_action/activable/xeno_spit,
+		//datum/action/xeno_action/activable/xeno_spit,
 		/datum/action/xeno_action/activable/psychic_cure/queen_give_heal,
-		/datum/action/xeno_action/activable/neurotox_sting/ozelomelyn,
+		//datum/action/xeno_action/activable/neurotox_sting/ozelomelyn,
 		/datum/action/xeno_action/pheromones,
 		/datum/action/xeno_action/pheromones/emit_recovery,
 		/datum/action/xeno_action/pheromones/emit_warding,
@@ -74,7 +74,8 @@
 		/datum/action/xeno_action/activable/command_minions,
 		/datum/action/xeno_action/set_agressivity,
 		/datum/action/xeno_action/activable/tail_slam,
-		/datum/action/xeno_action/toggle_psychic_barrier
+		/datum/action/xeno_action/toggle_psychic_barrier,
+		/datum/action/xeno_action/ready_charge/queen_charge
 	)
 
 
@@ -216,11 +217,11 @@
 		/datum/action/xeno_action/blessing_menu,
 		/datum/action/xeno_action/place_acidwell,
 		/datum/action/xeno_action/call_of_the_burrowed,
-		/datum/action/xeno_action/activable/screech,
+		//datum/action/xeno_action/activable/screech,
 		/datum/action/xeno_action/activable/corrosive_acid/strong,
-		/datum/action/xeno_action/activable/xeno_spit,
+		//datum/action/xeno_action/activable/xeno_spit,
 		/datum/action/xeno_action/activable/psychic_cure/queen_give_heal,
-		/datum/action/xeno_action/activable/neurotox_sting/ozelomelyn,
+		//datum/action/xeno_action/activable/neurotox_sting/ozelomelyn,
 		/datum/action/xeno_action/pheromones,
 		/datum/action/xeno_action/pheromones/emit_recovery,
 		/datum/action/xeno_action/pheromones/emit_warding,
@@ -235,6 +236,7 @@
 		/datum/action/xeno_action/rally_minion,
 		/datum/action/xeno_action/activable/command_minions,
 		/datum/action/xeno_action/set_agressivity,
-		/datum/action/xeno_action/ready_charge/queen_charge,
-		/datum/action/xeno_action/activable/tail_slam
+		/datum/action/xeno_action/activable/tail_slam,
+		/datum/action/xeno_action/toggle_psychic_barrier,
+		/datum/action/xeno_action/ready_charge/queen_charge
 	)

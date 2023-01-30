@@ -373,6 +373,7 @@
 	agile_charge = (X.upgrade == XENO_UPGRADE_FOUR)
 
 /datum/action/xeno_action/ready_charge/queen_charge
+	speed_per_step = 0.12
 	action_icon_state = "queen_ready_charge"
 
 // ***************************************

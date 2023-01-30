@@ -132,23 +132,17 @@
 /datum/action/xeno_action/toggle_psychic_barrier
 	name = "Toggle Psychic Barrier"
 	action_icon_state = "stealth_on"
-	desc = "VANGUARD."
+	desc = "Generates a rechargable barrier which absorbs damage while active."
 	plasma_cost = 10
 	keybinding_signals = list(
 		KEYBINDING_NORMAL = COMSIG_XENOABILITY_TOGGLE_PSYCHIC_BARRIER
 	)
 	//Is the barrier active?
 	var/barrier_active = FALSE
+	//Handles the timer for the barrier cooldown (Found in mobs.dm)
+	var/barrier_timer
 	//Determines how much barrier health is left.
 	var/barrier_health = 0
-	//Max barrier health before regeneration halts.
-	var/max_barrier_health = 100
-	//Actual timer for the barrier cooldown.
-	var/barrier_timer
-	//Default time it takes before barrier begins to regenrate.
-	var/damaged_barrier_cooldown = 5 SECONDS
-	//How much the barrier regenerates per tick
-	var/barrier_regen_amount = 2
 
 /datum/action/xeno_action/toggle_psychic_barrier/remove_action(mob/living/L)
 	if(barrier_active)
@@ -168,17 +162,19 @@
 	activate_barrier()
 	succeed_activate()
 
-/datum/action/xeno_action/toggle_psychic_barrier/proc/activate_barrier() //Kills shield processing.
+//Activates the barrier and sets an extended timer before it will actually generate.
+/datum/action/xeno_action/toggle_psychic_barrier/proc/activate_barrier()
 	SIGNAL_HANDLER
 	to_chat(owner, "<span class='xenodanger'>We activate our psychic barrier.</span>")
 	barrier_active = TRUE
 
 	RegisterSignal(owner, COMSIG_XENOMORPH_PSYCHIC_BARRIER_REGEN, .proc/handle_barrier)
 	RegisterSignal(owner, list(COMSIG_XENOMORPH_BRUTE_DAMAGE, COMSIG_XENOMORPH_BURN_DAMAGE), .proc/absorb_damage)
-	START_PROCESSING(SSprocessing, src)
-	handle_barrier()
+	//Longer timer on initial activation.
+	barrier_timer = addtimer(CALLBACK(src, .proc/begin_barrier_regen), QUEEN_BARRIER_COOLDOWN * 2, TIMER_STOPPABLE)
 
-/datum/action/xeno_action/toggle_psychic_barrier/proc/deactivate_barrier() //Kills shield processing.
+//Kills all barrier related processes.
+/datum/action/xeno_action/toggle_psychic_barrier/proc/deactivate_barrier()
 	SIGNAL_HANDLER
 	to_chat(owner, "<span class='xenodanger'>We deactivate our psychic barrier.</span>")
 	barrier_active = FALSE
@@ -188,28 +184,46 @@
 	UnregisterSignal(owner, list(COMSIG_XENOMORPH_BRUTE_DAMAGE, COMSIG_XENOMORPH_BURN_DAMAGE))
 	STOP_PROCESSING(SSprocessing, src)
 
+//Runs constantly while regenerating the barrier.
 /datum/action/xeno_action/toggle_psychic_barrier/process()
 	if(!barrier_active)
 		return PROCESS_KILL
+	var/mob/living/carbon/xenomorph/xenoowner = owner
+	xenoowner.use_plasma(QUEEN_BARRIER_PLASMA_DRAIN)
+	//If we have no plasma, we can no longer maintain the barrier.
+	if(!xenoowner.plasma_stored)
+		to_chat(xenoowner, span_xenodanger("We lack plasma to maintain our barrier."))
+		deactivate_barrier()
+		return PROCESS_KILL
 	handle_barrier()
 
+//Runs every tick that the barrier regenerates.
 /datum/action/xeno_action/toggle_psychic_barrier/proc/handle_barrier()
 	SIGNAL_HANDLER
-	//We need to be missing barrier health and have no delay to regenerate.
-	if((barrier_health < max_barrier_health) && (barrier_timer <= 0))
-		barrier_health += barrier_regen_amount
-		return
-	//Don't keep processing when barrier is full.
-	else if (barrier_health == max_barrier_health)
-		STOP_PROCESSING(SSprocessing, src)
+	//We need to be missing barrier health and have to run out the timer before we regenerate.
+	if((barrier_health < QUEEN_BARRIER_MAX_HEALTH) && (barrier_timer <= 0))
+		barrier_health += QUEEN_BARRIER_REGEN_AMOUNT
+		//No incidental bonus health.
+		if(barrier_health > QUEEN_BARRIER_MAX_HEALTH)
+			barrier_health = QUEEN_BARRIER_REGEN_AMOUNT
 		return
 
-/datum/action/xeno_action/toggle_psychic_barrier/proc/begin_regen()
+//Runs whenever the barrier timer hits 0. Triggered by taking damage or initializing the barrier.
+/datum/action/xeno_action/toggle_psychic_barrier/proc/begin_barrier_regen()
 	barrier_timer = null
+	//Prevents the process from starting again if we have no plasma but ran out during a timer.
+	var/mob/living/carbon/xenomorph/xenoowner = owner
+	if(!xenoowner.plasma_stored)
+		to_chat(xenoowner, span_xenodanger("We lack plasma to maintain our barrier."))
+		deactivate_barrier()
 	START_PROCESSING(SSprocessing, src)
 
+//Ouch we took damage, let's handle that.
 /datum/action/xeno_action/toggle_psychic_barrier/proc/absorb_damage(datum/source, amount, amount_mod)
 	SIGNAL_HANDLER
+	//If we absorb negative damage (healing) we should ignore it.
+	if(amount < 0)
+		return 0
 	STOP_PROCESSING(SSprocessing, src)
 	deltimer(barrier_timer)
 	var/barrier_left = barrier_health - amount
@@ -219,9 +233,9 @@
 	else
 		amount_mod += amount - barrier_health
 		barrier_health = 0
-		barrier_timer = addtimer(CALLBACK(src, .proc/begin_regen), damaged_barrier_cooldown + 1, TIMER_STOPPABLE) //Gives it a little extra time for the cooldown.
+		barrier_timer = addtimer(CALLBACK(src, .proc/begin_barrier_regen), QUEEN_BARRIER_COOLDOWN + 1 SECONDS, TIMER_STOPPABLE) //Extra cooldown when barrier is broken.
 		return -barrier_left
-	barrier_timer = addtimer(CALLBACK(src, .proc/begin_regen), damaged_barrier_cooldown, TIMER_STOPPABLE)
+	barrier_timer = addtimer(CALLBACK(src, .proc/begin_barrier_regen), QUEEN_BARRIER_COOLDOWN, TIMER_STOPPABLE)
 	return 0
 
 // ***************************************
