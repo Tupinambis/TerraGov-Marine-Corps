@@ -177,6 +177,7 @@
 /datum/action/xeno_action/toggle_psychic_barrier/proc/deactivate_barrier()
 	SIGNAL_HANDLER
 	to_chat(owner, "<span class='xenodanger'>We deactivate our psychic barrier.</span>")
+	vanguard.remove_filter("barrier_vis")
 	barrier_active = FALSE
 
 	UnregisterSignal(owner, COMSIG_XENOMORPH_PSYCHIC_BARRIER_REGEN)
@@ -201,7 +202,7 @@
 	//We need to be missing barrier health and have to run out the timer before we regenerate.
 	if((vanguard.barrier_health < vanguard.barrier_max_health) && (barrier_timer <= 0))
 		vanguard.barrier_health += QUEEN_BARRIER_REGEN_AMOUNT
-		vanguard.add_filter("barrier_vis", 1, outline_filter(4 * (vanguard.barrier_health / vanguard.barrier_max_health), "#69a9bd60")); \
+		vanguard.add_filter("barrier_vis", 1, outline_filter(4 * (vanguard.barrier_health / vanguard.barrier_max_health), "#6b60ce60")); \
 		//Regerating the barrier drains our plasma.
 		vanguard.use_plasma(QUEEN_BARRIER_PLASMA_DRAIN)
 	//If we have no plasma, we can no longer maintain the barrier.
@@ -231,7 +232,7 @@
 	var/barrier_left = vanguard.barrier_health - amount
 	if(barrier_left > 0)
 		vanguard.barrier_health = barrier_left
-		vanguard.add_filter("barrier_vis", 1, outline_filter(4 * (vanguard.barrier_health / vanguard.barrier_max_health), "#69a9bd60")); \
+		vanguard.add_filter("barrier_vis", 1, outline_filter(4 * (vanguard.barrier_health / vanguard.barrier_max_health), "#6b60ce60")); \
 		amount_mod += amount
 	else
 		amount_mod += amount - vanguard.barrier_health
@@ -269,10 +270,11 @@
 
 	var/mob/living/carbon/xenomorph/vanguard = owner
 	if(vanguard.barrier_health / vanguard.barrier_max_health < QUEEN_PSYCHIC_NOVA_BARRIER_THRESHOLD)
-		to_chat(owner,span_xenodanger("We cannot use our psychic blast without sufficient barrier strength!"))
+		if(!silent)
+			to_chat(owner,span_xenodanger("We cannot use our psychic blast without sufficient barrier strength!"))
 		return FALSE
 
-/datum/action/xeno_action/activable/psychic_nova/use_ability(atom/A, radius = 3)
+/datum/action/xeno_action/activable/psychic_nova/use_ability()
 	var/mob/living/carbon/xenomorph/vanguard = owner
 
 	succeed_activate()
@@ -283,8 +285,9 @@
 	vanguard.create_shriekwave() //Adds the visual effect. Wom wom wom
 
 	var/blast_damage = (vanguard.barrier_health / vanguard.barrier_max_health) * 50
+	var/blast_range = 2
 
-	for(var/atom/movable/blasted_tile AS in filled_turfs(A, radius, "circle"))
+	for(var/atom/movable/blasted_tile AS in filled_turfs(vanguard, blast_range, "circle"))
 		blasted_tile.Shake(4, 4, 2 SECONDS)
 		for(var/i in blasted_tile)
 			var/atom/movable/blasted = i
@@ -298,12 +301,10 @@
 				H.adjust_stagger(12)
 				H.add_slowdown(12)
 				shake_camera(H, 3, 3)
-				var/throwlocation = blasted.loc //first we get the target's location
-				throwlocation = get_step(throwlocation, owner.dir) //then we find where they're being thrown to, checking tile by tile.
-				H.throw_at(throwlocation, 6, 1, owner, TRUE)
 
-	vanguard.adjustBruteLoss(vanguard.barrier_health) //Destroy the barrier and signal an update to occur
-
+	vanguard.barrier_health = 0
+	var/datum/action/xeno_action/toggle_psychic_barrier/barrier_check = owner.actions_by_path[/datum/action/xeno_action/toggle_psychic_barrier]
+	barrier_check.absorb_damage()
 
 // ***************************************
 // *********** Tail Slam
