@@ -75,7 +75,8 @@
 		/datum/action/xeno_action/set_agressivity,
 		/datum/action/xeno_action/activable/tail_slam,
 		/datum/action/xeno_action/toggle_psychic_barrier,
-		/datum/action/xeno_action/ready_charge/queen_charge
+		/datum/action/xeno_action/ready_charge/queen_charge,
+		/datum/action/xeno_action/activable/psychic_nova
 	)
 
 
@@ -238,5 +239,6 @@
 		/datum/action/xeno_action/set_agressivity,
 		/datum/action/xeno_action/activable/tail_slam,
 		/datum/action/xeno_action/toggle_psychic_barrier,
-		/datum/action/xeno_action/ready_charge/queen_charge
+		/datum/action/xeno_action/ready_charge/queen_charge,
+		/datum/action/xeno_action/activable/psychic_nova
 	)

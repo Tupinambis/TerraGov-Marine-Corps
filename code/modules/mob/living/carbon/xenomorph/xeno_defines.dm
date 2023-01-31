@@ -375,6 +375,10 @@
 	// Gorger vars
 	var/overheal = 0
 
+	// Barrier vars
+	var/barrier_health = 0
+	var/barrier_max_health = 0
+
 	// Warrior vars
 	var/agility = 0		// 0 - upright, 1 - all fours
 

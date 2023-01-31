@@ -561,6 +561,17 @@
 	description = ""
 	keybind_signal = COMSIG_XENOABILITY_TOGGLE_PSYCHIC_BARRIER
 
+/datum/keybinding/xeno/psychic_nova
+	name = "psychic_nova"
+	full_name = "Queen: Psychic Blast"
+	description = ""
+	keybind_signal = COMSIG_XENOABILITY_PSYCHIC_NOVA
+/datum/keybinding/xeno/psychic_nova_select
+	name = "psychic_nova_select"
+	full_name = "Queen: Select Psychic Blast"
+	description = ""
+	keybind_signal = COMSIG_XENOABILITY_PSYCHIC_NOVA_SELECT
+
 /datum/keybinding/xeno/ravager_charge
 	name = "ravager_charge"
 	full_name = "Ravager: Eviscerating Charge"

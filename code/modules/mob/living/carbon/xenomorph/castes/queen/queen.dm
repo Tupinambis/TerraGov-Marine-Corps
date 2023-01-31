@@ -18,6 +18,7 @@
 	upgrade = XENO_UPGRADE_ZERO
 	bubble_icon = "alienroyal"
 
+	barrier_max_health = 100
 	var/breathing_counter = 0
 	inherent_verbs = list(
 		/mob/living/carbon/xenomorph/proc/hijack,
