@@ -176,6 +176,7 @@
 //Kills all barrier related processes.
 /datum/action/xeno_action/toggle_psychic_barrier/proc/deactivate_barrier()
 	SIGNAL_HANDLER
+	var/mob/living/carbon/xenomorph/vanguard = owner
 	to_chat(owner, "<span class='xenodanger'>We deactivate our psychic barrier.</span>")
 	vanguard.remove_filter("barrier_vis")
 	barrier_active = FALSE
