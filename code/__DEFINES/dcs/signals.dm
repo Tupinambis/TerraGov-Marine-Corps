@@ -727,8 +727,8 @@
 #define COMSIG_XENOABILITY_TAIL_SLAM "xenoability_tail_slam"
 #define COMSIG_XENOABILITY_TAIL_SLAM_SELECT "xenoability_tail_slam_select"
 #define COMSIG_XENOABILITY_TOGGLE_PSYCHIC_BARRIER "xenoability_toggle_psychic_barrier"
-#define COMSIG_XENOABILITY_PSYCHIC_NOVA "xenoability_nova_blast"
-#define COMSIG_XENOABILITY_PSYCHIC_NOVA_SELECT "xenoability_nova_blast_select"
+#define COMSIG_XENOABILITY_PSYCHIC_DISCHARGE "xenoability_nova_blast"
+#define COMSIG_XENOABILITY_PSYCHIC_DISCHARGE_SELECT "xenoability_nova_blast_select"
 
 #define COMSIG_XENOABILITY_LAY_HIVEMIND "xenoability_lay_hivemind"
 #define COMSIG_XENOABILITY_LAY_EGG "xenoability_lay_egg"

@@ -561,16 +561,16 @@
 	description = ""
 	keybind_signal = COMSIG_XENOABILITY_TOGGLE_PSYCHIC_BARRIER
 
-/datum/keybinding/xeno/psychic_nova
-	name = "psychic_nova"
+/datum/keybinding/xeno/psychic_discharge
+	name = "psychic_discharge"
 	full_name = "Queen: Psychic Blast"
 	description = ""
-	keybind_signal = COMSIG_XENOABILITY_PSYCHIC_NOVA
-/datum/keybinding/xeno/psychic_nova_select
-	name = "psychic_nova_select"
+	keybind_signal = COMSIG_XENOABILITY_PSYCHIC_DISCHARGE
+/datum/keybinding/xeno/psychic_discharge_select
+	name = "psychic_discharge_select"
 	full_name = "Queen: Select Psychic Blast"
 	description = ""
-	keybind_signal = COMSIG_XENOABILITY_PSYCHIC_NOVA_SELECT
+	keybind_signal = COMSIG_XENOABILITY_PSYCHIC_DISCHARGE_SELECT
 
 /datum/keybinding/xeno/ravager_charge
 	name = "ravager_charge"

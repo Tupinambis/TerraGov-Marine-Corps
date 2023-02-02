@@ -247,35 +247,35 @@
 // *********** Psychic Blast
 // ***************************************
 
-/datum/action/xeno_action/activable/psychic_nova
-	name = "Psychic Nova"
+/datum/action/xeno_action/activable/psychic_discharge
+	name = "Psychic Discharge"
 	action_icon_state = "43"
-	desc = "Psychic Nova."
+	desc = "Psychic Discharge."
 	cooldown_timer = 5 SECONDS
 	plasma_cost = 5
 	keybind_flags = XACT_KEYBIND_USE_ABILITY
 	keybinding_signals = list(
-		KEYBINDING_NORMAL = COMSIG_XENOABILITY_PSYCHIC_NOVA,
-		KEYBINDING_ALTERNATE = COMSIG_XENOABILITY_PSYCHIC_NOVA_SELECT,
+		KEYBINDING_NORMAL = COMSIG_XENOABILITY_PSYCHIC_DISCHARGE,
+		KEYBINDING_ALTERNATE = COMSIG_XENOABILITY_PSYCHIC_DISCHARGE_SELECT,
 	)
 
-/datum/action/xeno_action/activable/psychic_nova/on_cooldown_finish()
+/datum/action/xeno_action/activable/psychic_discharge/on_cooldown_finish()
 	to_chat(owner, span_notice("We are ready to explode.."))
 	playsound(owner, "sound/effects/xeno_newlarva.ogg", 50, 0, 1)
 	return ..()
 
-/datum/action/xeno_action/activable/psychic_nova/can_use_action(silent = FALSE, override_flags)
+/datum/action/xeno_action/activable/psychic_discharge/can_use_action(silent = FALSE, override_flags)
 	. = ..()
 	if(!.)
 		return FALSE
 
 	var/mob/living/carbon/xenomorph/vanguard = owner
-	if(vanguard.barrier_health / vanguard.barrier_max_health < QUEEN_PSYCHIC_NOVA_BARRIER_THRESHOLD)
+	if(vanguard.barrier_health / vanguard.barrier_max_health < QUEEN_PSYCHIC_DISCHARGE_BARRIER_THRESHOLD)
 		if(!silent)
 			to_chat(owner,span_xenodanger("We cannot use our psychic blast without sufficient barrier strength!"))
 		return FALSE
 
-/datum/action/xeno_action/activable/psychic_nova/use_ability()
+/datum/action/xeno_action/activable/psychic_discharge/use_ability()
 	var/mob/living/carbon/xenomorph/vanguard = owner
 
 	succeed_activate()
@@ -489,7 +489,6 @@
 
 /datum/action/xeno_action/toggle_queen_zoom/proc/zoom_xeno_in(message = TRUE)
 	var/mob/living/carbon/xenomorph/xeno = owner
-	RegisterSignal(xeno, COMSIG_MOVABLE_MOVED, .proc/on_movement)
 	if(message)
 		xeno.visible_message(span_notice("[xeno] emits a broad and weak psychic aura."),
 		span_notice("We start focusing our psychic energy to expand the reach of our senses."), null, 5)
@@ -498,16 +497,10 @@
 
 /datum/action/xeno_action/toggle_queen_zoom/proc/zoom_xeno_out(message = TRUE)
 	var/mob/living/carbon/xenomorph/xeno = owner
-	UnregisterSignal(xeno, COMSIG_MOVABLE_MOVED)
 	if(message)
 		xeno.visible_message(span_notice("[xeno] stops emitting its broad and weak psychic aura."),
 		span_notice("We stop the effort of expanding our senses."), null, 5)
 	xeno.zoom_out()
-
-
-/datum/action/xeno_action/toggle_queen_zoom/proc/on_movement(datum/source, atom/oldloc, direction, Forced)
-	zoom_xeno_out()
-
 
 // ***************************************
 // *********** Set leader
@@ -584,15 +577,26 @@
 // ***************************************
 /datum/action/xeno_action/activable/psychic_cure/queen_give_heal
 	name = "Heal"
-	action_icon_state = "heal_xeno"
+	action_icon_state = "healing_infusion"
 	desc = "Apply a minor heal to the target."
-	cooldown_timer = 5 SECONDS
-	plasma_cost = 150
+	cooldown_timer = 1 SECONDS
+	plasma_cost = 50
 	keybinding_signals = list(
 		KEYBINDING_NORMAL = COMSIG_XENOABILITY_QUEEN_HEAL,
 	)
 	heal_range = HIVELORD_HEAL_RANGE
 	target_flags = XABB_MOB_TARGET
+	//Controls the healing recharges. Recharges up to 3 max at a time.
+	var/heal_charges = 0
+	var/increase_charge_timer = 20 SECONDS
+	var/increase_charge_time
+
+/datum/action/xeno_action/activable/psychic_cure/queen_give_heal/can_use_ability(atom/target, silent = FALSE, override_flags)
+	. = ..()
+	if(!.)
+		return FALSE
+	if(heal_charges < 1)
+		return FALSE
 
 /datum/action/xeno_action/activable/psychic_cure/queen_give_heal/use_ability(atom/target)
 	if(owner.do_actions)
@@ -605,8 +609,26 @@
 	var/mob/living/carbon/xenomorph/patient = target
 	patient.salve_healing()
 	owner.changeNext_move(CLICK_CD_RANGE)
+	heal_charges -= 1
+	increase_charge_time = addtimer(CALLBACK(src, .proc/increase_stacks), increase_charge_timer, TIMER_UNIQUE) //TODO: Make a define
 	succeed_activate()
 	add_cooldown()
+
+/datum/action/xeno_action/activable/psychic_cure/queen_give_heal/proc/increase_stacks()
+	heal_charges += 1
+	update_button_icon()
+	//if we aren't full, loop until we are.
+	if(heal_charges < 3)
+		increase_charge_time = addtimer(CALLBACK(src, .proc/increase_stacks), increase_charge_timer, TIMER_UNIQUE) //TODO: Make a define
+
+/datum/action/xeno_action/activable/psychic_cure/queen_give_heal/give_action(mob/living/L)
+	. = ..()
+	//Start timer upon initialization.
+	increase_charge_time = addtimer(CALLBACK(src, .proc/increase_stacks), increase_charge_timer, TIMER_UNIQUE) //TODO: Make a define
+
+/datum/action/xeno_action/activable/psychic_cure/queen_give_heal/update_button_icon()
+	action_icon_state = "essence_link_[heal_charges]"
+	return ..()
 
 /// Heals the target.
 /mob/living/carbon/xenomorph/proc/salve_healing()
@@ -623,15 +645,18 @@
 // ***************************************
 /datum/action/xeno_action/activable/queen_give_plasma
 	name = "Give Plasma"
-	action_icon_state = "queen_give_plasma"
+	action_icon_state = "healing_infusion"
 	desc = "Give plasma to a target Xenomorph (you must be overwatching them.)"
-	plasma_cost = 150
-	cooldown_timer = 8 SECONDS
+	plasma_cost = 50
+	cooldown_timer = 1 SECONDS
 	keybinding_signals = list(
 		KEYBINDING_NORMAL = COMSIG_XENOABILITY_QUEEN_GIVE_PLASMA,
 	)
 	use_state_flags = XACT_USE_LYING
 	target_flags = XABB_MOB_TARGET
+	var/plasma_charges = 0
+	var/plasma_recharge_timer = 20 SECONDS
+	var/plasma_recharge_time
 
 /datum/action/xeno_action/activable/queen_give_plasma/can_use_ability(atom/target, silent = FALSE, override_flags)
 	. = ..()
@@ -657,11 +682,14 @@
 		if(!silent)
 			receiver.balloon_alert(owner, "Cannot give plasma, full")
 		return FALSE
-
+	if(plasma_charges < 1)
+		return FALSE
 
 /datum/action/xeno_action/activable/queen_give_plasma/give_action(mob/living/L)
 	. = ..()
 	RegisterSignal(L, COMSIG_XENOMORPH_QUEEN_PLASMA, .proc/try_use_ability)
+	//Start timer upon initialization.
+	plasma_recharge_time = addtimer(CALLBACK(src, .proc/increase_plasma_stacks), plasma_recharge_timer, TIMER_UNIQUE) //TODO: Make a define
 
 /datum/action/xeno_action/activable/queen_give_plasma/remove_action(mob/living/L)
 	. = ..()
@@ -674,9 +702,22 @@
 		return
 	use_ability(target)
 
+/datum/action/xeno_action/activable/queen_give_plasma/proc/increase_plasma_stacks()
+	plasma_charges += 1
+	//if we aren't full, loop until we are.
+	update_button_icon()
+	if(plasma_charges < 3)
+		plasma_recharge_time = addtimer(CALLBACK(src, .proc/increase_plasma_stacks), plasma_recharge_timer, TIMER_UNIQUE) //TODO: Make a define
+
+/datum/action/xeno_action/activable/queen_give_plasma/update_button_icon()
+	action_icon_state = "essence_link_[plasma_charges]"
+	return ..()
+
 /datum/action/xeno_action/activable/queen_give_plasma/use_ability(atom/target)
 	var/mob/living/carbon/xenomorph/receiver = target
+	plasma_recharge_time = addtimer(CALLBACK(src, .proc/increase_plasma_stacks), plasma_recharge_timer, TIMER_UNIQUE) //TODO: Make a define
 	add_cooldown()
+	plasma_charges -= 1
 	receiver.gain_plasma(300)
 	succeed_activate()
 	receiver.balloon_alert_to_viewers("Queen plasma", ignored_mobs = GLOB.alive_human_list)
