@@ -501,12 +501,6 @@
 	description = ""
 	keybind_signal = COMSIG_XENOABILITY_GRAV_NADE
 
-/datum/keybinding/xeno/screech
-	name = "screech"
-	full_name = "Queen: Screech"
-	description = ""
-	keybind_signal = COMSIG_XENOABILITY_SCREECH
-
 /datum/keybinding/xeno/toggle_queen_zoom
 	name = "toggle_queen_zoom"
 	full_name = "Queen: Toggle Zoom"

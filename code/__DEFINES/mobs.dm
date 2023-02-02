@@ -549,8 +549,8 @@ GLOBAL_LIST_INIT(xenoupgradetiers, list(XENO_UPGRADE_BASETYPE, XENO_UPGRADE_INVA
 #define CHARGE_TYPE_MASSIVE 4
 
 //Queen Defines
-#define QUEEN_PSYCHIC_DISCHARGE_BARRIER_THRESHOLD 0.75 //We need to be at 75% of max barrier or higher to use psychic blast.
-#define QUEEN_BARRIER_PLASMA_DRAIN 20
+#define QUEEN_PSYCHIC_DISCHARGE_BARRIER_THRESHOLD 0.8 //We need to be at 80% of max barrier or higher to use psychic blast.
+#define QUEEN_BARRIER_PLASMA_DRAIN 10
 #define QUEEN_BARRIER_COOLDOWN 10 SECONDS
 #define QUEEN_BARRIER_REGEN_AMOUNT 5
 

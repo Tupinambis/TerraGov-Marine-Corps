@@ -57,81 +57,13 @@
 	succeed_activate()
 	add_cooldown()
 
-
-// ***************************************
-// *********** Screech
-// ***************************************
-/datum/action/xeno_action/activable/screech
-	name = "Screech"
-	action_icon_state = "screech"
-	desc = "A large area knockdown that causes pain and screen-shake."
-	ability_name = "screech"
-	plasma_cost = 250
-	cooldown_timer = 100 SECONDS
-	keybind_flags = XACT_KEYBIND_USE_ABILITY
-	keybinding_signals = list(
-		KEYBINDING_NORMAL = COMSIG_XENOABILITY_SCREECH,
-	)
-
-/datum/action/xeno_action/activable/screech/on_cooldown_finish()
-	to_chat(owner, span_warning("We feel our throat muscles vibrate. We are ready to screech again."))
-	return ..()
-
-/datum/action/xeno_action/activable/screech/use_ability(atom/A)
-	var/mob/living/carbon/xenomorph/queen/X = owner
-
-	//screech is so powerful it kills huggers in our hands
-	if(istype(X.r_hand, /obj/item/clothing/mask/facehugger))
-		var/obj/item/clothing/mask/facehugger/FH = X.r_hand
-		if(FH.stat != DEAD)
-			FH.kill_hugger()
-
-	if(istype(X.l_hand, /obj/item/clothing/mask/facehugger))
-		var/obj/item/clothing/mask/facehugger/FH = X.l_hand
-		if(FH.stat != DEAD)
-			FH.kill_hugger()
-
-	succeed_activate()
-	add_cooldown()
-
-	playsound(X.loc, 'sound/voice/alien_queen_screech.ogg', 75, 0)
-	X.visible_message(span_xenohighdanger("\The [X] emits an ear-splitting guttural roar!"))
-	GLOB.round_statistics.queen_screech++
-	SSblackbox.record_feedback("tally", "round_statistics", 1, "queen_screech")
-	X.create_shriekwave() //Adds the visual effect. Wom wom wom
-	//stop_momentum(charge_dir) //Screech kills a charge
-
-	var/list/nearby_living = list()
-	for(var/mob/living/L in hearers(WORLD_VIEW, X))
-		nearby_living.Add(L)
-
-	for(var/i in GLOB.mob_living_list)
-		var/mob/living/L = i
-		if(get_dist(L, X) > WORLD_VIEW_NUM)
-			continue
-		L.screech_act(X, WORLD_VIEW_NUM, L in nearby_living)
-
-/datum/action/xeno_action/activable/screech/ai_should_start_consider()
-	return TRUE
-
-/datum/action/xeno_action/activable/screech/ai_should_use(atom/target)
-	if(!iscarbon(target))
-		return FALSE
-	if(get_dist(target, owner) > 4)
-		return FALSE
-	if(!can_use_ability(target, override_flags = XACT_IGNORE_SELECTED_ABILITY))
-		return FALSE
-	if(target.get_xeno_hivenumber() == owner.get_xeno_hivenumber())
-		return FALSE
-	return TRUE
-
 // ***************************************
 // *********** Psychic Barrier
 // ***************************************
 
 /datum/action/xeno_action/toggle_psychic_barrier
 	name = "Toggle Psychic Barrier"
-	action_icon_state = "stealth_on"
+	action_icon_state = "46"
 	desc = "Generates a rechargable barrier which absorbs damage while active."
 	cooldown_timer = 1 SECONDS //Token for anti-spam
 	plasma_cost = 10
@@ -184,11 +116,13 @@
 	UnregisterSignal(owner, COMSIG_XENOMORPH_PSYCHIC_BARRIER_REGEN)
 	UnregisterSignal(owner, list(COMSIG_XENOMORPH_BRUTE_DAMAGE, COMSIG_XENOMORPH_BURN_DAMAGE))
 	STOP_PROCESSING(SSprocessing, src)
+	update_button_icon()
 
 //Runs constantly while regenerating the barrier.
 /datum/action/xeno_action/toggle_psychic_barrier/process()
 	if(!barrier_active)
 		return PROCESS_KILL
+	update_button_icon()
 	handle_barrier()
 
 //Runs every tick that the barrier regenerates.
@@ -203,7 +137,7 @@
 	//We need to be missing barrier health and have to run out the timer before we regenerate.
 	if((vanguard.barrier_health < vanguard.barrier_max_health) && (barrier_timer <= 0))
 		vanguard.barrier_health += QUEEN_BARRIER_REGEN_AMOUNT
-		vanguard.add_filter("barrier_vis", 1, outline_filter(4 * (vanguard.barrier_health / vanguard.barrier_max_health), "#6b60ce60")); \
+		vanguard.add_filter("barrier_vis", 1, outline_filter(4 * (vanguard.barrier_health / vanguard.barrier_max_health), "#60cace60")); \
 		//Regerating the barrier drains our plasma.
 		vanguard.use_plasma(QUEEN_BARRIER_PLASMA_DRAIN)
 	//If we have no plasma, we can no longer maintain the barrier.
@@ -220,6 +154,33 @@
 	playsound(vanguard, 'sound/items/eshield_recharge.ogg', 40)
 	START_PROCESSING(SSprocessing, src)
 
+/datum/action/xeno_action/toggle_psychic_barrier/update_button_icon()
+	var/mob/living/carbon/xenomorph/vanguard = owner
+	switch(vanguard.barrier_health / vanguard.barrier_max_health)
+		if(0.1 to 0.19)
+			action_icon_state = "barrier_1"
+		if(0.2 to 0.29)
+			action_icon_state = "barrier_2"
+		if(0.3 to 0.39)
+			action_icon_state = "barrier_3"
+		if(0.4 to 0.49)
+			action_icon_state = "barrier_4"
+		if(0.5 to 0.59)
+			action_icon_state = "barrier_5"
+		if(0.6 to 0.69)
+			action_icon_state = "barrier_6"
+		if(0.7 to 0.79)
+			action_icon_state = "barrier_7"
+		if(0.8 to 0.89)
+			action_icon_state = "barrier_8"
+		if(0.9 to 0.99)
+			action_icon_state = "barrier_9"
+		if(1 to INFINITY)
+			action_icon_state = "barrier_10"
+		else
+			action_icon_state = "barrier_0"
+	return ..()
+
 //Ouch we took damage, let's handle that.
 /datum/action/xeno_action/toggle_psychic_barrier/proc/absorb_damage(datum/source, amount, amount_mod)
 	SIGNAL_HANDLER
@@ -233,7 +194,7 @@
 	var/barrier_left = vanguard.barrier_health - amount
 	if(barrier_left > 0)
 		vanguard.barrier_health = barrier_left
-		vanguard.add_filter("barrier_vis", 1, outline_filter(4 * (vanguard.barrier_health / vanguard.barrier_max_health), "#6b60ce60")); \
+		vanguard.add_filter("barrier_vis", 1, outline_filter(4 * (vanguard.barrier_health / vanguard.barrier_max_health), "#60cace60")); \
 		amount_mod += amount
 	else
 		amount_mod += amount - vanguard.barrier_health
@@ -281,11 +242,11 @@
 	succeed_activate()
 	add_cooldown()
 
-	playsound(vanguard.loc, 'sound/voice/alien_queen_screech.ogg', 75, 0)
+	playsound(vanguard,'sound/effects/bamf.ogg', 75, TRUE)
+	playsound(vanguard, "alien_roar", 50)
 	vanguard.visible_message(span_xenohighdanger("\The [vanguard] detonates their psychic barrier!"))
-	vanguard.create_shriekwave() //Adds the visual effect. Wom wom wom
 
-	var/blast_damage = (vanguard.barrier_health / vanguard.barrier_max_health) * 50
+	var/blast_damage = (vanguard.barrier_health / vanguard.barrier_max_health) * 25
 	var/blast_range = 2
 
 	for(var/atom/movable/blasted_tile AS in filled_turfs(vanguard, blast_range, "circle"))
@@ -297,10 +258,12 @@
 				if(H.stat == DEAD) //unless they are dead, then the blast mysteriously ignores them.
 					continue
 				//frag grenade blowing up in your FACE
+				step_away(H, src, blast_range, 2)
 				H.apply_damage(blast_damage, BRUTE, blocked = MELEE)
 				H.apply_damage(blast_damage, BURN, blocked = MELEE)
 				H.adjust_stagger(12)
 				H.add_slowdown(12)
+				H.Paralyze(5)
 				shake_camera(H, 3, 3)
 
 	vanguard.barrier_health = 0
@@ -337,18 +300,18 @@
 	switch(owner.dir)
 		if(NORTH)
 			lower_left = locate(owner.x - 1, owner.y + 1, owner.z)
-			upper_right = locate(owner.x + 1, owner.y + 3, owner.z)
+			upper_right = locate(owner.x + 1, owner.y + 5, owner.z)
 		if(SOUTH)
-			lower_left = locate(owner.x - 1, owner.y - 3, owner.z)
+			lower_left = locate(owner.x - 1, owner.y - 5, owner.z)
 			upper_right = locate(owner.x + 1, owner.y - 1, owner.z)
 		if(WEST)
-			lower_left = locate(owner.x - 3, owner.y - 1, owner.z)
+			lower_left = locate(owner.x - 5, owner.y - 1, owner.z)
 			upper_right = locate(owner.x - 1, owner.y + 1, owner.z)
 		if(EAST)
 			lower_left = locate(owner.x + 1, owner.y - 1, owner.z)
-			upper_right = locate(owner.x + 3, owner.y + 1, owner.z)
+			upper_right = locate(owner.x + 5, owner.y + 1, owner.z)
 
-	for(var/turf/affected_tile in block(lower_left, upper_right)) //everything in the 3x3 block is found.
+	for(var/turf/affected_tile in block(lower_left, upper_right)) //everything in the 3x5 block is found.
 		affected_tile.Shake(4, 4, 2 SECONDS)
 		for(var/i in affected_tile)
 			var/atom/movable/affected = i
@@ -360,7 +323,7 @@
 				H.apply_damage(30, STAMINA)
 				H.adjust_stagger(6)
 				H.add_slowdown(6)
-				H.apply_effect(1, WEAKEN)
+				H.Paralyze(5)
 				shake_camera(H, 3, 3)
 
 	owner.visible_message(span_xenowarning("[owner] slams their tail into the ground!"), \
@@ -576,7 +539,7 @@
 // *********** Queen Acidic Salve
 // ***************************************
 /datum/action/xeno_action/activable/psychic_cure/queen_give_heal
-	name = "Heal"
+	name = "Acidic Salve"
 	action_icon_state = "healing_infusion"
 	desc = "Apply a minor heal to the target."
 	cooldown_timer = 1 SECONDS
@@ -645,7 +608,7 @@
 // ***************************************
 /datum/action/xeno_action/activable/queen_give_plasma
 	name = "Give Plasma"
-	action_icon_state = "healing_infusion"
+	action_icon_state = "transfer_plasma"
 	desc = "Give plasma to a target Xenomorph (you must be overwatching them.)"
 	plasma_cost = 50
 	cooldown_timer = 1 SECONDS
@@ -710,7 +673,7 @@
 		plasma_recharge_time = addtimer(CALLBACK(src, .proc/increase_plasma_stacks), plasma_recharge_timer, TIMER_UNIQUE) //TODO: Make a define
 
 /datum/action/xeno_action/activable/queen_give_plasma/update_button_icon()
-	action_icon_state = "essence_link_[plasma_charges]"
+	action_icon_state = "transfer_plasma_[plasma_charges]"
 	return ..()
 
 /datum/action/xeno_action/activable/queen_give_plasma/use_ability(atom/target)

@@ -424,8 +424,6 @@ GLOBAL_LIST_INIT(bioscan_locations, list(
 		dat += "[SSevacuation.human_escaped] marines manage to evacuate, among [SSevacuation.initial_human_on_ship] that were on ship when xenomorphs arrived."
 	if(GLOB.round_statistics.now_pregnant)
 		dat += "[GLOB.round_statistics.now_pregnant] people infected among which [GLOB.round_statistics.total_larva_burst] burst. For a [(GLOB.round_statistics.total_larva_burst / max(GLOB.round_statistics.now_pregnant, 1)) * 100]% successful delivery rate!"
-	if(GLOB.round_statistics.queen_screech)
-		dat += "[GLOB.round_statistics.queen_screech] Queen screeches."
 	if(GLOB.round_statistics.warrior_lunges)
 		dat += "[GLOB.round_statistics.warrior_lunges] Warriors lunges."
 	if(GLOB.round_statistics.crusher_stomp_victims)
