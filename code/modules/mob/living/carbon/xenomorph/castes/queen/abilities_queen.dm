@@ -64,9 +64,9 @@
 /datum/action/xeno_action/toggle_psychic_barrier
 	name = "Toggle Psychic Barrier"
 	action_icon_state = "46"
-	desc = "Generates a rechargable barrier which absorbs damage while active."
-	cooldown_timer = 1 SECONDS //Token for anti-spam
-	plasma_cost = 10
+	desc = "Consumes plasma to generate a barrier which absorbs all damage until it is depleted."
+	cooldown_timer = 0.1 SECONDS //No spam
+	plasma_cost = 0
 	keybinding_signals = list(
 		KEYBINDING_NORMAL = COMSIG_XENOABILITY_TOGGLE_PSYCHIC_BARRIER
 	)
@@ -94,10 +94,10 @@
 	activate_barrier()
 	succeed_activate()
 
-//Activates the barrier and sets an extended timer before it will actually generate.
+//Activates the barrier and sets a timer before it starts to regenerate.
 /datum/action/xeno_action/toggle_psychic_barrier/proc/activate_barrier()
 	SIGNAL_HANDLER
-	to_chat(owner, "<span class='xenodanger'>We activate our psychic barrier.</span>")
+	to_chat(owner, "<span class='xenodanger'>We will now expend plasma to regerate our psychic barrier.</span>")
 	barrier_active = TRUE
 
 	RegisterSignal(owner, COMSIG_XENOMORPH_PSYCHIC_BARRIER_REGEN, .proc/handle_barrier)
@@ -105,12 +105,10 @@
 	//Timer before initial activation.
 	barrier_timer = addtimer(CALLBACK(src, .proc/begin_barrier_regen), QUEEN_BARRIER_COOLDOWN, TIMER_STOPPABLE)
 
-//Kills all barrier related processes.
+//Stops barrier regeneration.
 /datum/action/xeno_action/toggle_psychic_barrier/proc/deactivate_barrier()
 	SIGNAL_HANDLER
-	var/mob/living/carbon/xenomorph/vanguard = owner
-	to_chat(owner, "<span class='xenodanger'>We deactivate our psychic barrier.</span>")
-	vanguard.remove_filter("barrier_vis")
+	to_chat(owner, "<span class='xenodanger'>We will no longer regenerate our psychic barrier.</span>")
 	barrier_active = FALSE
 
 	UnregisterSignal(owner, COMSIG_XENOMORPH_PSYCHIC_BARRIER_REGEN)
@@ -125,38 +123,36 @@
 	update_button_icon()
 	handle_barrier()
 
-//Runs every tick that the barrier regenerates.
+//Does the recharging.
 /datum/action/xeno_action/toggle_psychic_barrier/proc/handle_barrier()
 	SIGNAL_HANDLER
-	var/mob/living/carbon/xenomorph/vanguard = owner
-	if(!vanguard.plasma_stored)
-		to_chat(vanguard, span_xenodanger("We lack plasma to maintain our barrier."))
+	var/mob/living/carbon/xenomorph/barrier_user = owner
+	//Makes sure we have the plasma needed to regenerate the barrier.
+	if(!barrier_user.plasma_stored)
+		to_chat(owner, span_xenodanger("Our plasma stores are too low to regenerate our barrier..."))
 		deactivate_barrier()
 		STOP_PROCESSING(SSprocessing, src)
 		return
-	//We need to be missing barrier health and have to run out the timer before we regenerate.
-	if((vanguard.barrier_health < vanguard.barrier_max_health) && (barrier_timer <= 0))
-		vanguard.barrier_health += QUEEN_BARRIER_REGEN_AMOUNT
-		vanguard.add_filter("barrier_vis", 1, outline_filter(4 * (vanguard.barrier_health / vanguard.barrier_max_health), "#60cace60")); \
-		//Regerating the barrier drains our plasma.
-		vanguard.use_plasma(QUEEN_BARRIER_PLASMA_DRAIN)
-	//If we have no plasma, we can no longer maintain the barrier.
-		//No incidental bonus health, and we stop looping barrier regeneration.
-	if(vanguard.barrier_health >= vanguard.barrier_max_health)
-		vanguard.barrier_health = vanguard.barrier_max_health
+	//We need to be missing barrier health and run the timer out before we can begin regeneration.
+	if((barrier_user.barrier_health < barrier_user.barrier_max_health) && (barrier_timer <= 0))
+		barrier_user.barrier_health += QUEEN_BARRIER_REGEN_AMOUNT
+		barrier_user.add_filter("barrier_vis", 1, outline_filter(4 * (barrier_user.barrier_health / barrier_user.barrier_max_health), "#60cace60"))
+		barrier_user.use_plasma(QUEEN_BARRIER_PLASMA_DRAIN)
+	//Make sure we don't produce excess barrier.
+	if(barrier_user.barrier_health >= barrier_user.barrier_max_health)
+		barrier_user.barrier_health = barrier_user.barrier_max_health
 		STOP_PROCESSING(SSprocessing, src)
 	return
 
-//Runs whenever the barrier timer hits 0. Triggered by taking damage or initializing the barrier.
+//Runs whenever the barrier timer hits 0.
 /datum/action/xeno_action/toggle_psychic_barrier/proc/begin_barrier_regen()
-	var/mob/living/carbon/xenomorph/vanguard = owner
 	barrier_timer = null
-	playsound(vanguard, 'sound/items/eshield_recharge.ogg', 40)
+	playsound(owner, 'sound/items/eshield_recharge.ogg', 40)
 	START_PROCESSING(SSprocessing, src)
 
 /datum/action/xeno_action/toggle_psychic_barrier/update_button_icon()
-	var/mob/living/carbon/xenomorph/vanguard = owner
-	switch(vanguard.barrier_health / vanguard.barrier_max_health)
+	var/mob/living/carbon/xenomorph/barrier_user = owner
+	switch(barrier_user.barrier_health / barrier_user.barrier_max_health)
 		if(0.1 to 0.19)
 			action_icon_state = "barrier_1"
 		if(0.2 to 0.29)
@@ -184,36 +180,36 @@
 //Ouch we took damage, let's handle that.
 /datum/action/xeno_action/toggle_psychic_barrier/proc/absorb_damage(datum/source, amount, amount_mod)
 	SIGNAL_HANDLER
-	var/mob/living/carbon/xenomorph/vanguard = owner
-	vanguard.remove_filter("barrier_vis")
+	var/mob/living/carbon/xenomorph/barrier_user = owner
+	barrier_user.remove_filter("barrier_vis")
 	//If we absorb negative damage (healing) we should ignore it.
 	if(amount < 0)
 		return 0
 	STOP_PROCESSING(SSprocessing, src)
 	deltimer(barrier_timer)
-	var/barrier_left = vanguard.barrier_health - amount
+	var/barrier_left = barrier_user.barrier_health - amount
 	if(barrier_left > 0)
-		vanguard.barrier_health = barrier_left
-		vanguard.add_filter("barrier_vis", 1, outline_filter(4 * (vanguard.barrier_health / vanguard.barrier_max_health), "#60cace60")); \
+		barrier_user.barrier_health = barrier_left
+		barrier_user.add_filter("barrier_vis", 1, outline_filter(4 * (barrier_user.barrier_health / barrier_user.barrier_max_health), "#60cace60")); \
 		amount_mod += amount
 	else
-		amount_mod += amount - vanguard.barrier_health
-		vanguard.barrier_health = 0
+		amount_mod += amount - barrier_user.barrier_health
+		barrier_user.barrier_health = 0
 		barrier_timer = addtimer(CALLBACK(src, .proc/begin_barrier_regen), QUEEN_BARRIER_COOLDOWN + 1 SECONDS, TIMER_STOPPABLE) //Extra cooldown when barrier is broken.
 		return -barrier_left
 	barrier_timer = addtimer(CALLBACK(src, .proc/begin_barrier_regen), QUEEN_BARRIER_COOLDOWN, TIMER_STOPPABLE)
 	return 0
 
 // ***************************************
-// *********** Psychic Blast
+// *********** Psychic Discharge
 // ***************************************
 
 /datum/action/xeno_action/activable/psychic_discharge
 	name = "Psychic Discharge"
 	action_icon_state = "43"
-	desc = "Psychic Discharge."
-	cooldown_timer = 5 SECONDS
-	plasma_cost = 5
+	desc = "Discharges all barrier health to produce a powerful explosion in front of the queen."
+	cooldown_timer = 10 SECONDS
+	plasma_cost = 50
 	keybind_flags = XACT_KEYBIND_USE_ABILITY
 	keybinding_signals = list(
 		KEYBINDING_NORMAL = COMSIG_XENOABILITY_PSYCHIC_DISCHARGE,
@@ -221,7 +217,7 @@
 	)
 
 /datum/action/xeno_action/activable/psychic_discharge/on_cooldown_finish()
-	to_chat(owner, span_notice("We are ready to explode.."))
+	to_chat(owner, span_notice("Our psychic discharge is ready..."))
 	playsound(owner, "sound/effects/xeno_newlarva.ogg", 50, 0, 1)
 	return ..()
 
@@ -230,110 +226,76 @@
 	if(!.)
 		return FALSE
 
-	var/mob/living/carbon/xenomorph/vanguard = owner
-	if(vanguard.barrier_health / vanguard.barrier_max_health < QUEEN_PSYCHIC_DISCHARGE_BARRIER_THRESHOLD)
+	var/mob/living/carbon/xenomorph/discharger = owner
+	if(discharger.barrier_health / discharger.barrier_max_health < QUEEN_PSYCHIC_DISCHARGE_BARRIER_THRESHOLD)
 		if(!silent)
-			to_chat(owner,span_xenodanger("We cannot use our psychic blast without sufficient barrier strength!"))
+			to_chat(owner, span_xenodanger("Our barrier is too weak to use discharge!"))
 		return FALSE
 
-/datum/action/xeno_action/activable/psychic_discharge/use_ability()
-	var/mob/living/carbon/xenomorph/vanguard = owner
+/datum/action/xeno_action/activable/psychic_discharge/use_ability(atom/target)
+	var/mob/living/carbon/xenomorph/discharger = owner
 
 	succeed_activate()
 	add_cooldown()
 
-	playsound(vanguard,'sound/effects/bamf.ogg', 75, TRUE)
-	playsound(vanguard, "alien_roar", 50)
-	vanguard.visible_message(span_xenohighdanger("\The [vanguard] detonates their psychic barrier!"))
+	playsound(owner,'sound/effects/bamf.ogg', 75, TRUE)
+	playsound(owner, "alien_roar", 50)
+	discharger.visible_message(span_xenohighdanger("\The [owner] detonates their psychic barrier!"))
 
-	var/blast_damage = (vanguard.barrier_health / vanguard.barrier_max_health) * 25
-	var/blast_range = 2
-
-	for(var/atom/movable/blasted_tile AS in filled_turfs(vanguard, blast_range, "circle"))
-		blasted_tile.Shake(4, 4, 2 SECONDS)
-		for(var/i in blasted_tile)
-			var/atom/movable/blasted = i
-			if(ishuman(blasted)) //if they're human, they also should get knocked off their feet from the blast.
-				var/mob/living/carbon/human/H = blasted
-				if(H.stat == DEAD) //unless they are dead, then the blast mysteriously ignores them.
-					continue
-				//frag grenade blowing up in your FACE
-				step_away(H, src, blast_range, 2)
-				H.apply_damage(blast_damage, BRUTE, blocked = MELEE)
-				H.apply_damage(blast_damage, BURN, blocked = MELEE)
-				H.adjust_stagger(12)
-				H.add_slowdown(12)
-				H.Paralyze(5)
-				shake_camera(H, 3, 3)
-
-	vanguard.barrier_health = 0
-	var/datum/action/xeno_action/toggle_psychic_barrier/barrier_check = owner.actions_by_path[/datum/action/xeno_action/toggle_psychic_barrier]
-	barrier_check.absorb_damage()
-
-// ***************************************
-// *********** Tail Slam
-// ***************************************
-
-/datum/action/xeno_action/activable/tail_slam
-	name = "Psychic_Tail Slam"
-	action_icon_state = "tail_attack"
-	desc = "Slam your tail into the ground."
-	cooldown_timer = 5 SECONDS
-	plasma_cost = 5
-	keybind_flags = XACT_KEYBIND_USE_ABILITY | XACT_IGNORE_SELECTED_ABILITY
-	keybinding_signals = list(
-		KEYBINDING_NORMAL = COMSIG_XENOABILITY_TAIL_SLAM,
-		KEYBINDING_ALTERNATE = COMSIG_XENOABILITY_TAIL_SLAM_SELECT,
-	)
-
-/datum/action/xeno_action/activable/tail_slam/on_cooldown_finish()
-	to_chat(owner, span_notice("We are ready to use tail slam again."))
-	playsound(owner, "sound/effects/xeno_newlarva.ogg", 50, 0, 1)
-	return ..()
-
-/datum/action/xeno_action/activable/tail_slam/use_ability(atom/target)
 	if(target) // Keybind use doesn't have a target
-		owner.face_atom(target)
+		discharger.face_atom(target)
 
 	var/turf/lower_left
 	var/turf/upper_right
 	switch(owner.dir)
 		if(NORTH)
-			lower_left = locate(owner.x - 1, owner.y + 1, owner.z)
-			upper_right = locate(owner.x + 1, owner.y + 5, owner.z)
+			lower_left = locate(owner.x - 1, owner.y, owner.z)
+			upper_right = locate(owner.x + 1, owner.y + 2, owner.z)
 		if(SOUTH)
-			lower_left = locate(owner.x - 1, owner.y - 5, owner.z)
-			upper_right = locate(owner.x + 1, owner.y - 1, owner.z)
+			lower_left = locate(owner.x - 1, owner.y - 2, owner.z)
+			upper_right = locate(owner.x + 1, owner.y, owner.z)
 		if(WEST)
-			lower_left = locate(owner.x - 5, owner.y - 1, owner.z)
-			upper_right = locate(owner.x - 1, owner.y + 1, owner.z)
+			lower_left = locate(owner.x - 2, owner.y - 1, owner.z)
+			upper_right = locate(owner.x, owner.y + 1, owner.z)
 		if(EAST)
-			lower_left = locate(owner.x + 1, owner.y - 1, owner.z)
-			upper_right = locate(owner.x + 5, owner.y + 1, owner.z)
+			lower_left = locate(owner.x, owner.y - 1, owner.z)
+			upper_right = locate(owner.x + 2, owner.y + 1, owner.z)
 
-	for(var/turf/affected_tile in block(lower_left, upper_right)) //everything in the 3x5 block is found.
+	for(var/turf/affected_tile in block(lower_left, upper_right)) //everything in the 3x3 block is found.
+		new /obj/effect/temp_visual/psychic_discharge(affected_tile)
 		affected_tile.Shake(4, 4, 2 SECONDS)
 		for(var/i in affected_tile)
 			var/atom/movable/affected = i
+			if(!ishuman(affected) && !istype(affected, /obj/item) && !isdroid(affected))
+				affected.Shake(4, 4, 20)
+				continue
 			if(ishuman(affected)) //if they're human, they also should get knocked off their feet from the blast.
 				var/mob/living/carbon/human/H = affected
 				if(H.stat == DEAD) //unless they are dead, then the blast mysteriously ignores them.
 					continue
-				H.apply_damage(30, BRUTE, blocked = MELEE)
-				H.apply_damage(30, STAMINA)
-				H.adjust_stagger(6)
-				H.add_slowdown(6)
-				H.Paralyze(5)
-				shake_camera(H, 3, 3)
+				H.adjustBruteLoss(45)
+				H.adjustFireLoss(45)
+				H.adjust_ear_damage(10, 30)
+				H.adjust_stagger(3)
+				H.add_slowdown(30)
+				shake_camera(H, 2, 1)
+			var/throwlocation = affected.loc //first we get the target's location
+			for(var/x in 1 to 2)
+				throwlocation = get_step(throwlocation, owner.dir) //then we find where they're being thrown to, checking tile by tile.
+			affected.throw_at(throwlocation, 2, 1, owner, TRUE)
 
-	owner.visible_message(span_xenowarning("[owner] slams their tail into the ground!"), \
-	span_xenowarning("We send slam our tail against the ground!"))
+	discharger.barrier_health = 0
+	var/datum/action/xeno_action/toggle_psychic_barrier/barrier_check = owner.actions_by_path[/datum/action/xeno_action/toggle_psychic_barrier]
+	barrier_check.absorb_damage()
 
-	playsound(owner,'sound/effects/bamf.ogg', 75, TRUE)
-	playsound(owner, "alien_roar", 50)
+/obj/effect/temp_visual/psychic_discharge
+	name = "shattering_roar"
+	icon = 'icons/effects/effects.dmi'
+	duration = 4
 
-	succeed_activate()
-	add_cooldown()
+/obj/effect/temp_visual/psychic_discharge/Initialize()
+	. = ..()
+	flick("smash", src)
 
 // ***************************************
 // *********** Overwatch
@@ -440,8 +402,6 @@
 
 /datum/action/xeno_action/toggle_queen_zoom/action_activate()
 	var/mob/living/carbon/xenomorph/queen/xeno = owner
-	if(xeno.do_actions)
-		return
 	if(xeno.is_zoomed)
 		zoom_xeno_out(xeno.observed_xeno ? FALSE : TRUE)
 		return
@@ -542,7 +502,7 @@
 	name = "Acidic Salve"
 	action_icon_state = "healing_infusion"
 	desc = "Apply a minor heal to the target."
-	cooldown_timer = 1 SECONDS
+	cooldown_timer = 0.1 SECONDS
 	plasma_cost = 50
 	keybinding_signals = list(
 		KEYBINDING_NORMAL = COMSIG_XENOABILITY_QUEEN_HEAL,
@@ -551,7 +511,7 @@
 	target_flags = XABB_MOB_TARGET
 	//Controls the healing recharges. Recharges up to 3 max at a time.
 	var/heal_charges = 0
-	var/increase_charge_timer = 20 SECONDS
+	var/increase_charge_timer = 30 SECONDS
 	var/increase_charge_time
 
 /datum/action/xeno_action/activable/psychic_cure/queen_give_heal/can_use_ability(atom/target, silent = FALSE, override_flags)
@@ -611,14 +571,14 @@
 	action_icon_state = "transfer_plasma"
 	desc = "Give plasma to a target Xenomorph (you must be overwatching them.)"
 	plasma_cost = 50
-	cooldown_timer = 1 SECONDS
+	cooldown_timer = 0.1 SECONDS
 	keybinding_signals = list(
 		KEYBINDING_NORMAL = COMSIG_XENOABILITY_QUEEN_GIVE_PLASMA,
 	)
 	use_state_flags = XACT_USE_LYING
 	target_flags = XABB_MOB_TARGET
 	var/plasma_charges = 0
-	var/plasma_recharge_timer = 20 SECONDS
+	var/plasma_recharge_timer = 30 SECONDS
 	var/plasma_recharge_time
 
 /datum/action/xeno_action/activable/queen_give_plasma/can_use_ability(atom/target, silent = FALSE, override_flags)

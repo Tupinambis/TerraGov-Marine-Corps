@@ -2,7 +2,7 @@
 	caste_name = "Queen"
 	display_name = "Queen"
 	caste_type_path = /mob/living/carbon/xenomorph/queen
-	caste_desc = "The biggest and baddest xeno. The Queen controls the hive and plants eggs"
+	caste_desc = "A psychic powerhouse of the xenomorph hive which leads the hive both in and out of battle."
 	job_type = /datum/job/xenomorph/queen
 
 	tier = XENO_TIER_FOUR
@@ -10,7 +10,7 @@
 	wound_type = "queen" //used to match appropriate wound overlays
 
 	// *** Melee Attacks *** //
-	melee_damage = 20
+	melee_damage = 24
 
 	// *** Speed *** //
 	speed = 0
@@ -32,10 +32,6 @@
 
 	// *** Defense *** //
 	soft_armor = list(MELEE = 50, BULLET = 50, LASER = 50, ENERGY = 50, BOMB = 30, BIO = 45, FIRE = 45, ACID = 45)
-
-	// *** Ranged Attack *** //
-	spit_delay = 1.3 SECONDS
-	spit_types = list(/datum/ammo/xeno/sticky, /datum/ammo/xeno/acid/medium)
 
 	// *** Pheromones *** //
 	aura_strength = 3.5 //The Queen's aura is strong and stays so, and gets devastating late game. Climbs by 1 to 5
@@ -70,10 +66,10 @@
 		/datum/action/xeno_action/rally_minion,
 		/datum/action/xeno_action/activable/command_minions,
 		/datum/action/xeno_action/set_agressivity,
-		/datum/action/xeno_action/activable/tail_slam,
 		/datum/action/xeno_action/toggle_psychic_barrier,
 		/datum/action/xeno_action/ready_charge/queen_charge,
-		/datum/action/xeno_action/activable/psychic_discharge
+		/datum/action/xeno_action/activable/psychic_discharge,
+		/datum/action/xeno_action/psychic_whisper
 	)
 
 
@@ -81,9 +77,12 @@
 	upgrade = XENO_UPGRADE_ZERO
 
 /datum/xeno_caste/queen/mature
-	caste_desc = "The biggest and baddest xeno. The Queen controls the hive and plants eggs."
+	caste_desc = "A psychic powerhouse of the xenomorph hive which leads the hive both in and out of battle. Psychic energy gently crackles against its carapace."
 
 	upgrade = XENO_UPGRADE_ONE
+
+	// *** Melee Attacks *** //
+	melee_damage = 26
 
 	// *** Speed *** //
 	speed = -0.1
@@ -101,9 +100,6 @@
 	// *** Defense *** //
 	soft_armor = list(MELEE = 55, BULLET = 55, LASER = 55, ENERGY = 55, BOMB = 30, BIO = 50, FIRE = 50, ACID = 50)
 
-	// *** Ranged Attack *** //
-	spit_delay = 1.2 SECONDS
-
 	// *** Pheromones *** //
 	aura_strength = 4
 
@@ -111,12 +107,12 @@
 	queen_leader_limit = 4
 
 /datum/xeno_caste/queen/elder
-	caste_desc = "The biggest and baddest xeno. The Empress controls multiple hives and planets."
+	caste_desc = "A psychic powerhouse of the xenomorph hive which leads the hive both in and out of battle. Psychic energy crackles violently against its carapace."
 
 	upgrade = XENO_UPGRADE_TWO
 
 	// *** Melee Attacks *** //
-	melee_damage = 23
+	melee_damage = 28
 
 	// *** Speed *** //
 	speed = -0.2
@@ -144,12 +140,12 @@
 	queen_leader_limit = 4
 
 /datum/xeno_caste/queen/ancient
-	caste_desc = "The most perfect Xeno form imaginable."
+	caste_desc = "A psychic powerhouse of the xenomorph hive which leads the hive both in and out of battle. Psychic energy violently lashes out from its carapace."
 	ancient_message = "We are the Alpha and the Omega. The beginning and the end."
 	upgrade = XENO_UPGRADE_THREE
 
 	// *** Melee Attacks *** //
-	melee_damage = 23
+	melee_damage = 30
 
 	// *** Speed *** //
 	speed = -0.3
@@ -167,9 +163,6 @@
 	// *** Defense *** //
 	soft_armor = list(MELEE = 65, BULLET = 65, LASER = 65, ENERGY = 65, BOMB = 30, BIO = 60, FIRE = 60, ACID = 60)
 
-	// *** Ranged Attack *** //
-	spit_delay = 1.1 SECONDS
-
 	// *** Pheromones *** //
 	aura_strength = 5
 
@@ -178,11 +171,11 @@
 
 //same stats as ancient
 /datum/xeno_caste/queen/primordial
-	caste_desc = "A fearsome Xeno hulk of titanic proportions. Nothing can stand in it's way."
-	primordial_message = "Destiny bows to our will as the universe trembles before us."
+	caste_desc = "A psychic goddess of the xenomorph hive which leads the hive both in and out of battle. The very air around her warps in her presence."
+	primordial_message = "The universe trembles before our power, we are a psychic goddess."
 	upgrade = XENO_UPGRADE_FOUR
 	// *** Melee Attacks *** //
-	melee_damage = 23
+	melee_damage = 30
 
 	// *** Speed *** //
 	speed = -0.3
@@ -196,9 +189,6 @@
 
 	// *** Defense *** //
 	soft_armor = list(MELEE = 65, BULLET = 65, LASER = 65, ENERGY = 65, BOMB = 30, BIO = 60, FIRE = 60, ACID = 60)
-
-	// *** Ranged Attack *** //
-	spit_delay = 1.1 SECONDS
 
 	// *** Pheromones *** //
 	aura_strength = 5
@@ -231,8 +221,8 @@
 		/datum/action/xeno_action/rally_minion,
 		/datum/action/xeno_action/activable/command_minions,
 		/datum/action/xeno_action/set_agressivity,
-		/datum/action/xeno_action/activable/tail_slam,
 		/datum/action/xeno_action/toggle_psychic_barrier,
 		/datum/action/xeno_action/ready_charge/queen_charge,
-		/datum/action/xeno_action/activable/psychic_discharge
+		/datum/action/xeno_action/activable/psychic_discharge,
+		/datum/action/xeno_action/psychic_whisper
 	)

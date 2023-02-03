@@ -18,7 +18,6 @@
 	upgrade = XENO_UPGRADE_ZERO
 	bubble_icon = "alienroyal"
 
-	barrier_max_health = 100
 	var/breathing_counter = 0
 	inherent_verbs = list(
 		/mob/living/carbon/xenomorph/proc/hijack,
@@ -92,7 +91,7 @@
 		if(XENO_UPGRADE_THREE)
 			name = "[hive.prefix]Ancient Empress ([nicknumber])" //Ancient
 		if(XENO_UPGRADE_FOUR)
-			name = "[hive.prefix]Primordial Empress ([nicknumber])"
+			name = "[hive.prefix]Primordial Goddess ([nicknumber])"
 
 	real_name = name
 	if(mind)

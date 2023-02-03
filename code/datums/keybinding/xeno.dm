@@ -537,18 +537,6 @@
 	description = ""
 	keybind_signal = COMSIG_XENOABILITY_DEEVOLVE
 
-/datum/keybinding/xeno/tail_slam
-	name = "tail_slam"
-	full_name = "Queen: Tail Slam"
-	description = ""
-	keybind_signal = COMSIG_XENOABILITY_TAIL_SLAM
-
-/datum/keybinding/xeno/tail_slam_select
-	name = "tail_slam_select"
-	full_name = "Queen: Select Tail Slam"
-	description = ""
-	keybind_signal = COMSIG_XENOABILITY_TAIL_SLAM_SELECT
-
 /datum/keybinding/xeno/toggle_psychic_barrier
 	name = "toggle_psychic_barrier"
 	full_name = "Queen: Toggle Psychic Barrier"
